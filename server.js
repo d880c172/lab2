@@ -1,17 +1,56 @@
 var express = require('express');
+var session = require('express-session');
+var cookieParser = require('cookie-parser');
+
 var app = express();
 
+app.use(cookieParser());
+app.use(session({keys: ['k1','k2'],secret: "asdf"}));
+
+
 app.get('/', function(req, res){
+  for(var i in agents)
+  {
+    if( agents[i].id == req.session.id )
+    {
+      res.status(200);
+      res.sendFile(__dirname + "/index.html");
+      return;
+    }
+  }
+
+  agents.push({"id": req.session.id,
+              "where": "strong-hall",
+              "inventory": ["laptop"]});
 	res.status(200);
 	res.sendFile(__dirname + "/index.html");
 });
 
-app.get('/:id', function(req, res){
+
+app.get('/:agentID/:id', function(req, res){
+	if (req.params.id == "id") {
+      if (req.session.id)
+      {
+        res.send(req.session.id);
+      }
+      else
+      {
+        req.session.id = sesID++;
+        res.send(req.session.id);
+      }
+	    res.status(200);
+	    return;
+	}
 	if (req.params.id == "inventory") {
 	    res.set({'Content-Type': 'application/json'});
 	    res.status(200);
 	    res.send(inventory);
 	    return;
+	}
+	if (req.params.id == "agents") {
+      res.send("Agents: " + agents.length);
+      res.status(200)
+      return;
 	}
 	for (var i in campus) {
 		if (req.params.id == campus[i].id) {
@@ -90,7 +129,10 @@ var dropbox = function(ix,room) {
 	room.what.push(item);
 }
 
+
 var inventory = ["laptop"];
+
+var agents = [];
 
 var campus =
     [ { "id": "lied-center",
